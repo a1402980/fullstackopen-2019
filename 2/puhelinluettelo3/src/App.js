@@ -40,6 +40,28 @@ const App = () => {
     }
   }
 
+  const updatePerson = (newPerson, existingPerson) => {
+    if(window.confirm(`Person already exists. do you want to update contact ${existingPerson.name}?`)){
+      personsService
+        .update(existingPerson.id, newPerson)
+          .then(()=>{
+            personsService
+            .getAll()
+              .then(initialPersons => {
+                setPersons(initialPersons)
+                setNewName('')
+                setNewNumber('')
+                setNotificationsMessage(
+                  `Person with number ${newPerson.number} updated contacts`
+                )
+                setTimeout(() => {
+                  setNotificationsMessage(null)
+                }, 5000)
+              })
+          })
+    }
+  }
+
   const people = () => constactsToShow.map(person =>
     <Person
       person={person}
@@ -65,6 +87,13 @@ const App = () => {
             setTimeout(() => {
               setNotificationsMessage(null)
             }, 5000)
+          }).catch(error => {
+            // pääset käsiksi palvelimen palauttamaan virheilmoitusolioon näin
+            console.log(error.response.data)
+            setNotificationsMessage(error.response.data.error);
+            setTimeout(() => {
+              setNotificationsMessage(null)
+            }, 5000)
           })
     }
   }
@@ -79,11 +108,13 @@ const App = () => {
       return false;
     }
 
-    if(persons.filter(person => person.number === input.number).length === 0){
-      response =  true;
-    } else {
-      alert(`${input.number} on jo puhelinluettelossa`);
+    const personWithExistingNumber = persons.filter(person => person.number === input.number)
+
+    if(personWithExistingNumber.length) {
+      updatePerson(input, personWithExistingNumber[0])
       return false;
+    } else {
+      response =  true;
     }
 
     return response;
